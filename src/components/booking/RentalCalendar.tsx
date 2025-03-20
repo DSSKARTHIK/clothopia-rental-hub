@@ -153,7 +153,6 @@ export default function RentalCalendar({
                   selected: "bg-primary text-primary-foreground",
                   range: "bg-primary/10 text-primary",
                 }}
-                className="p-3 pointer-events-auto"
                 components={{
                   Day: ({ date, ...props }) => (
                     <button
@@ -208,7 +207,6 @@ export default function RentalCalendar({
                   selected: "bg-primary text-primary-foreground",
                   range: "bg-primary/10 text-primary",
                 }}
-                className="p-3 pointer-events-auto"
                 components={{
                   Day: ({ date, ...props }) => (
                     <button

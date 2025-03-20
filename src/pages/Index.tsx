@@ -1,5 +1,5 @@
 
-import { useNavigate, useEffect } from "react";
+import { useNavigate, useEffect } from "react-router-dom";
 
 // This is just a redirect component to the Home page
 export default function Index() {

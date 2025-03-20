@@ -12,12 +12,20 @@ import Footer from "@/components/layout/Footer";
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
-  const featuredRef = useRef<HTMLDivElement>(null);
   
-  // Animation refs
-  const heroTextRef = useRef<HTMLDivElement>(null);
+  // Animation state
+  const [animationsTriggered, setAnimationsTriggered] = useState({
+    hero: false,
+    search: false,
+    categories: false,
+    featured: false
+  });
+  
+  // Refs for scroll detection
+  const heroRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const categoriesRef = useRef<HTMLDivElement>(null);
+  const featuredRef = useRef<HTMLDivElement>(null);
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,53 +35,50 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // Trigger initial animations with a slight delay
+    setTimeout(() => {
+      setAnimationsTriggered(prev => ({
+        ...prev,
+        hero: true
+      }));
+    }, 200);
+    
+    setTimeout(() => {
+      setAnimationsTriggered(prev => ({
+        ...prev,
+        search: true
+      }));
+    }, 400);
+    
+    setTimeout(() => {
+      setAnimationsTriggered(prev => ({
+        ...prev,
+        categories: true
+      }));
+    }, 600);
+
     const handleScroll = () => {
       const scrollTop = window.scrollY;
       setIsScrolled(scrollTop > 50);
       
-      // Add animations based on scroll position
-      const sections = [
-        { ref: featuredRef, offset: -100 },
-      ];
-      
-      sections.forEach(({ ref, offset }) => {
-        if (ref.current) {
-          const rect = ref.current.getBoundingClientRect();
-          const isVisible = rect.top <= window.innerHeight + offset;
-          
-          if (isVisible) {
-            ref.current.classList.add("animate-slide-in");
-          }
+      // Check if featured section is in view
+      if (featuredRef.current) {
+        const rect = featuredRef.current.getBoundingClientRect();
+        if (rect.top <= window.innerHeight - 100) {
+          setAnimationsTriggered(prev => ({
+            ...prev,
+            featured: true
+          }));
         }
-      });
+      }
     };
 
     window.addEventListener("scroll", handleScroll);
-    
-    // Initial animations
-    const heroAnimation = setTimeout(() => {
-      if (heroTextRef.current) {
-        heroTextRef.current.classList.add("animate-slide-in");
-      }
-    }, 200);
-    
-    const searchAnimation = setTimeout(() => {
-      if (searchRef.current) {
-        searchRef.current.classList.add("animate-slide-in");
-      }
-    }, 400);
-    
-    const categoriesAnimation = setTimeout(() => {
-      if (categoriesRef.current) {
-        categoriesRef.current.classList.add("animate-slide-in");
-      }
-    }, 600);
+    // Trigger initial check
+    handleScroll();
     
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      clearTimeout(heroAnimation);
-      clearTimeout(searchAnimation);
-      clearTimeout(categoriesAnimation);
     };
   }, []);
 
@@ -113,8 +118,10 @@ export default function Home() {
       <section className="pt-24 lg:pt-32 pb-16 lg:pb-24 px-4 relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10">
           <div 
-            ref={heroTextRef}
-            className="max-w-3xl mx-auto text-center opacity-0"
+            ref={heroRef}
+            className={`max-w-3xl mx-auto text-center transition-all duration-700 ${
+              animationsTriggered.hero ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+            }`}
           >
             <Badge variant="outline" className="mb-4 px-3 py-1">
               Style without commitment
@@ -127,7 +134,9 @@ export default function Home() {
             </p>
             <div
               ref={searchRef}
-              className="max-w-md mx-auto mb-12 opacity-0"
+              className={`max-w-md mx-auto mb-12 transition-all duration-700 delay-200 ${
+                animationsTriggered.search ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+              }`}
             >
               <form 
                 onSubmit={handleSearch}
@@ -172,7 +181,9 @@ export default function Home() {
       {/* Categories Section */}
       <section 
         ref={categoriesRef}
-        className="py-16 px-4 opacity-0"
+        className={`py-16 px-4 transition-all duration-700 delay-300 ${
+          animationsTriggered.categories ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+        }`}
       >
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
@@ -214,7 +225,9 @@ export default function Home() {
       {/* Featured Items Section */}
       <section
         ref={featuredRef}
-        className="py-16 px-4 bg-muted/30 opacity-0"
+        className={`py-16 px-4 bg-muted/30 transition-all duration-700 ${
+          animationsTriggered.featured ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+        }`}
       >
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">

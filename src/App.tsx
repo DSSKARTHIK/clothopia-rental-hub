@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Browse from "./pages/Browse";
 import CategoryView from "./pages/CategoryView";
 import ClothingDetail from "./pages/ClothingDetail";
+import UserDashboard from "./pages/UserDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/browse" element={<Browse />} />
           <Route path="/categories/:category" element={<CategoryView />} />
           <Route path="/clothing/:id" element={<ClothingDetail />} />
+          <Route path="/dashboard" element={<UserDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

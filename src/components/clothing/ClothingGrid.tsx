@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import ClothingCard from "./ClothingCard";
+<<<<<<< HEAD
 
 // Mock data for clothing items
 const MOCK_CLOTHING = [
@@ -117,6 +118,9 @@ const MOCK_CLOTHING = [
     category: "Accessories",
   },
 ];
+=======
+import { MOCK_CLOTHING } from "@/lib/productData";
+>>>>>>> 42d057645cd7940215cc0f1f1b0f52fddcb27b0e
 
 interface ClothingGridProps {
   category?: string;

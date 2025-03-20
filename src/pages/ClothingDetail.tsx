@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Share2, Heart, ChevronDown, ChevronUp } from "lucide-react";
@@ -25,45 +24,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import RentalCalendar from "@/components/booking/RentalCalendar";
 import RentalSummary from "@/components/booking/RentalSummary";
-
-// Mock clothing item data
-const MOCK_ITEM = {
-  id: "1",
-  name: "Floral Print Maxi Dress",
-  brand: "Gucci",
-  price: 65,
-  retailPrice: 320,
-  description: "This stunning floral print maxi dress is perfect for summer events, garden parties, or elegant evenings out. Featuring a flattering silhouette and premium fabric, this dress will make you feel fantastic for any special occasion.",
-  details: [
-    "100% premium silk fabric",
-    "Lined for comfort",
-    "Side zipper closure",
-    "Adjustable straps",
-    "Dry clean only",
-  ],
-  sizing: "This dress runs true to size. The model is 5'9\" and wears a size S.",
-  category: "Dresses",
-  occasion: ["Wedding", "Party", "Formal"],
-  color: "Multicolor",
-  images: [
-    "https://i.imgur.com/VGfHxMJ.jpg",
-    "https://i.imgur.com/PoXBm34.jpg",
-    "https://i.imgur.com/gJ2m5hZ.jpg",
-  ],
-  availableSizes: ["XS", "S", "M", "L"],
-  ratings: {
-    average: 4.8,
-    count: 24,
-  },
-  rentalInfo: {
-    minDays: 3,
-    maxDays: 14,
-    unavailableDates: [
-      { start: addDays(new Date(), 5), end: addDays(new Date(), 8) },
-      { start: addDays(new Date(), 20), end: addDays(new Date(), 22) },
-    ],
-  },
-};
+import { getProductById } from "@/lib/productData";
 
 export default function ClothingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -82,13 +43,41 @@ export default function ClothingDetail() {
   const [insuranceOption, setInsuranceOption] = useState<"basic" | "premium" | "none">("basic");
   
   useEffect(() => {
-    // Simulate loading data
     setIsLoading(true);
+    setCurrentImageIndex(0);
+    setSelectedSize(null);
+    
     const timer = setTimeout(() => {
-      // In a real app, we would fetch the item by ID
-      setItem(MOCK_ITEM);
+      const product = getProductById(id || "");
+      if (product) {
+        const productWithImages = {
+          ...product,
+          images: product.image ? [product.image] : [],
+          details: [
+            `Brand: ${product.brand}`,
+            `Category: ${product.category}`,
+            "Premium quality material",
+            "Dry clean recommended",
+          ],
+          sizing: "This item runs true to size. Select your normal size.",
+          rentalInfo: {
+            minDays: 3,
+            maxDays: 14,
+            unavailableDates: [
+              { start: addDays(new Date(), 5), end: addDays(new Date(), 8) },
+              { start: addDays(new Date(), 20), end: addDays(new Date(), 22) },
+            ],
+          },
+          ratings: {
+            average: 4.7,
+            count: Math.floor(Math.random() * 30) + 5,
+          },
+          availableSizes: ["XS", "S", "M", "L"],
+        };
+        setItem(productWithImages);
+      }
       setIsLoading(false);
-    }, 1000);
+    }, 600);
     
     return () => clearTimeout(timer);
   }, [id]);

@@ -185,7 +185,6 @@ export default function RentalCalendar({
                 inSelectedRange: "bg-primary/10 text-primary hover:bg-primary/20",
                 unavailableDay: "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"
               }}
-              displayMonth={{ displayMonth: currentMonth }}
             />
           </div>
           <div className="px-4 pb-4">
@@ -223,7 +222,6 @@ export default function RentalCalendar({
                 inSelectedRange: "bg-primary/10 text-primary hover:bg-primary/20",
                 unavailableDay: "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"
               }}
-              displayMonth={{ displayMonth: nextMonth }}
             />
           </div>
         </div>

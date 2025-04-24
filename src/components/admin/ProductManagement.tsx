@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -67,9 +68,20 @@ export default function ProductManagement() {
 
   const addProductMutation = useMutation({
     mutationFn: async (newProduct: ProductFormValues) => {
+      // Fix: Ensure all required fields are passed as non-optional values
+      const productToInsert = {
+        name: newProduct.name,
+        brand: newProduct.brand,
+        category: newProduct.category,
+        price: newProduct.price,
+        retail_price: newProduct.retail_price,
+        description: newProduct.description || "",
+        image: newProduct.image
+      };
+      
       const { data, error } = await supabase
         .from('products')
-        .insert([newProduct])
+        .insert([productToInsert])
         .select()
         .single();
       
@@ -89,9 +101,20 @@ export default function ProductManagement() {
 
   const updateProductMutation = useMutation({
     mutationFn: async ({ id, ...updates }: ProductFormValues & { id: string }) => {
+      // Fix: Ensure all required fields are passed as non-optional values
+      const productToUpdate = {
+        name: updates.name,
+        brand: updates.brand,
+        category: updates.category,
+        price: updates.price,
+        retail_price: updates.retail_price,
+        description: updates.description || "",
+        image: updates.image
+      };
+      
       const { data, error } = await supabase
         .from('products')
-        .update(updates)
+        .update(productToUpdate)
         .eq('id', id)
         .select()
         .single();

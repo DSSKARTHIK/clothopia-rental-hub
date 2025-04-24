@@ -9,7 +9,168 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      inventory: {
+        Row: {
+          available_stock: number
+          created_at: string | null
+          id: string
+          product_id: string | null
+          total_stock: number
+          updated_at: string | null
+        }
+        Insert: {
+          available_stock?: number
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          total_stock?: number
+          updated_at?: string | null
+        }
+        Update: {
+          available_stock?: number
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          total_stock?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string | null
+          delivery_address: string
+          id: string
+          payment_method: string
+          phone_number: string
+          rental_id: string | null
+          status: string
+          total_amount: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_address: string
+          id?: string
+          payment_method: string
+          phone_number: string
+          rental_id?: string | null
+          status: string
+          total_amount: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          delivery_address?: string
+          id?: string
+          payment_method?: string
+          phone_number?: string
+          rental_id?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          brand: string
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          image: string
+          name: string
+          price: number
+          retail_price: number
+          updated_at: string | null
+        }
+        Insert: {
+          brand: string
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image: string
+          name: string
+          price: number
+          retail_price: number
+          updated_at?: string | null
+        }
+        Update: {
+          brand?: string
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image?: string
+          name?: string
+          price?: number
+          retail_price?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      rentals: {
+        Row: {
+          created_at: string | null
+          end_date: string
+          id: string
+          product_id: string | null
+          start_date: string
+          status: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_date: string
+          id?: string
+          product_id?: string | null
+          start_date: string
+          status: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          product_id?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rentals_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

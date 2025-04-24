@@ -1,6 +1,8 @@
-
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import type { Product, InventoryItem } from "@/types/database";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
@@ -16,17 +18,53 @@ import { Search, ArrowUpDown, Package, AlertTriangle } from "lucide-react";
 import { MOCK_CLOTHING } from "@/lib/productData";
 
 export default function InventoryManagement() {
-  const [inventory, setInventory] = useState(
-    MOCK_CLOTHING.map(product => ({
-      ...product,
-      stock: Math.floor(Math.random() * 10) + 1, // Random stock between 1-10
-      available: Math.floor(Math.random() * 5) // Random available between 0-4
-    }))
-  );
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("name");
-  const [sortDirection, setSortDirection] = useState("asc");
-  
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const queryClient = useQueryClient();
+
+  // Fetch inventory with products
+  const { data: inventory = [], isLoading } = useQuery({
+    queryKey: ['inventory'],
+    queryFn: async () => {
+      const { data: inventoryData, error: inventoryError } = await supabase
+        .from('inventory')
+        .select(`
+          *,
+          products (*)
+        `);
+      
+      if (inventoryError) throw inventoryError;
+      
+      return inventoryData.map(item => ({
+        ...item,
+        product: item.products as Product
+      }));
+    }
+  });
+
+  // Update inventory mutation
+  const updateInventoryMutation = useMutation({
+    mutationFn: async ({ id, total_stock }: { id: string; total_stock: number }) => {
+      const { data, error } = await supabase
+        .from('inventory')
+        .update({ total_stock })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      toast.success("Inventory updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to update inventory: " + error.message);
+    }
+  });
+
   const toggleSort = (field: string) => {
     if (sortBy === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -36,13 +74,13 @@ export default function InventoryManagement() {
     }
   };
   
-  const filteredInventory = inventory.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase())
-  ).sort((a, b) => {
-    const aValue = a[sortBy as keyof typeof a];
-    const bValue = b[sortBy as keyof typeof b];
+  const filteredInventory = inventory.filter((item: any) => 
+    item.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.product.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.product.category.toLowerCase().includes(searchTerm.toLowerCase())
+  ).sort((a: any, b: any) => {
+    const aValue = a.product[sortBy as keyof typeof a.product];
+    const bValue = b.product[sortBy as keyof typeof b.product];
     
     if (typeof aValue === "string" && typeof bValue === "string") {
       return sortDirection === "asc" 
@@ -57,17 +95,12 @@ export default function InventoryManagement() {
     return 0;
   });
   
-  const lowStockItems = inventory.filter(item => item.stock <= 3).length;
-  const totalItems = inventory.reduce((acc, item) => acc + item.stock, 0);
-  const rentedItems = inventory.reduce((acc, item) => acc + (item.stock - item.available), 0);
+  const lowStockItems = inventory.filter((item: any) => item.total_stock <= 3).length;
+  const totalItems = inventory.reduce((acc: number, item: any) => acc + item.total_stock, 0);
+  const rentedItems = inventory.reduce((acc: number, item: any) => acc + (item.total_stock - item.available_stock), 0);
   
   const updateStock = (id: string, newStock: number) => {
-    setInventory(
-      inventory.map(item => 
-        item.id === id ? { ...item, stock: newStock } : item
-      )
-    );
-    toast.success("Stock updated successfully");
+    updateInventoryMutation.mutate({ id: id, total_stock: newStock });
   };
   
   return (
@@ -161,7 +194,7 @@ export default function InventoryManagement() {
               <TableHead>
                 <Button 
                   variant="ghost" 
-                  onClick={() => toggleSort("stock")}
+                  onClick={() => toggleSort("total_stock")}
                   className="flex items-center gap-1"
                 >
                   Total Stock
@@ -171,7 +204,7 @@ export default function InventoryManagement() {
               <TableHead>
                 <Button 
                   variant="ghost" 
-                  onClick={() => toggleSort("available")}
+                  onClick={() => toggleSort("available_stock")}
                   className="flex items-center gap-1"
                 >
                   Available
@@ -182,29 +215,29 @@ export default function InventoryManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredInventory.map((item) => (
-              <TableRow key={item.id} className={item.stock <= 3 ? "bg-amber-50" : ""}>
+            {filteredInventory.map((item: any) => (
+              <TableRow key={item.id} className={item.total_stock <= 3 ? "bg-amber-50" : ""}>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <div className="h-12 w-12 overflow-hidden rounded-md">
                       <img 
-                        src={item.image} 
-                        alt={item.name}
+                        src={item.product.image} 
+                        alt={item.product.name}
                         className="h-full w-full object-cover"
                       />
                     </div>
                     <div>
-                      <div className="font-medium">{item.name}</div>
-                      <div className="text-sm text-muted-foreground">{item.brand}</div>
+                      <div className="font-medium">{item.product.name}</div>
+                      <div className="text-sm text-muted-foreground">{item.product.brand}</div>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{item.category}</TableCell>
+                <TableCell>{item.product.category}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Input 
                       type="number" 
-                      value={item.stock} 
+                      value={item.total_stock} 
                       className="w-16"
                       min={0}
                       onChange={(e) => {
@@ -217,8 +250,8 @@ export default function InventoryManagement() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className={item.available === 0 ? "text-destructive" : ""}>
-                    {item.available} / {item.stock}
+                  <span className={item.available_stock === 0 ? "text-destructive" : ""}>
+                    {item.available_stock} / {item.total_stock}
                   </span>
                 </TableCell>
                 <TableCell className="text-right">

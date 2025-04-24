@@ -1,14 +1,16 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { Product } from "@/types/database";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
 import {
-  Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage
+  Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from "@/components/ui/form";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
@@ -17,29 +19,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Pencil, Trash, Search } from "lucide-react";
-import { MOCK_CLOTHING } from "@/lib/productData";
 
 const productSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   brand: z.string().min(1, "Brand is required"),
   category: z.string().min(1, "Category is required"),
   price: z.coerce.number().positive("Price must be positive"),
-  retailPrice: z.coerce.number().positive("Retail price must be positive"),
+  retail_price: z.coerce.number().positive("Retail price must be positive"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   image: z.string().url("Must be a valid image URL")
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
-// Define a more specific type for our products based on MOCK_CLOTHING
-type Product = typeof MOCK_CLOTHING[0];
-
 export default function ProductManagement() {
-  const [products, setProducts] = useState(MOCK_CLOTHING);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const queryClient = useQueryClient();
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -48,67 +46,100 @@ export default function ProductManagement() {
       brand: "",
       category: "",
       price: 0,
-      retailPrice: 0,
+      retail_price: 0,
       description: "",
       image: ""
     }
   });
 
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as Product[];
+    }
+  });
+
+  const addProductMutation = useMutation({
+    mutationFn: async (newProduct: ProductFormValues) => {
+      const { data, error } = await supabase
+        .from('products')
+        .insert([newProduct])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success("Product added successfully");
+      setIsAddDialogOpen(false);
+      form.reset();
+    },
+    onError: (error) => {
+      toast.error("Failed to add product: " + error.message);
+    }
+  });
+
+  const updateProductMutation = useMutation({
+    mutationFn: async ({ id, ...updates }: ProductFormValues & { id: string }) => {
+      const { data, error } = await supabase
+        .from('products')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success("Product updated successfully");
+      setIsEditDialogOpen(false);
+    },
+    onError: (error) => {
+      toast.error("Failed to update product: " + error.message);
+    }
+  });
+
+  const deleteProductMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success("Product deleted successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete product: " + error.message);
+    }
+  });
 
   const handleAddProduct = (values: ProductFormValues) => {
-    // In a real app, this would call an API
-    const newProduct: Product = {
-      id: Math.random().toString(36).substring(7),
-      name: values.name,
-      brand: values.brand,
-      category: values.category,
-      price: values.price,
-      retailPrice: values.retailPrice,
-      description: values.description,
-      image: values.image,
-      isNew: true
-    };
-    
-    setProducts([...products, newProduct]);
-    toast.success("Product added successfully");
-    setIsAddDialogOpen(false);
-    form.reset();
+    addProductMutation.mutate(values);
   };
 
   const handleEditProduct = (values: ProductFormValues) => {
     if (!currentProduct) return;
-    
-    // In a real app, this would call an API
-    const updatedProducts = products.map(product => 
-      product.id === currentProduct.id 
-        ? { 
-            ...product, 
-            name: values.name,
-            brand: values.brand,
-            category: values.category,
-            price: values.price,
-            retailPrice: values.retailPrice,
-            description: values.description,
-            image: values.image
-          } 
-        : product
-    );
-    
-    setProducts(updatedProducts);
-    toast.success("Product updated successfully");
-    setIsEditDialogOpen(false);
+    updateProductMutation.mutate({ ...values, id: currentProduct.id });
   };
 
   const handleDeleteProduct = (id: string) => {
-    // In a real app, this would call an API
-    const updatedProducts = products.filter(product => product.id !== id);
-    setProducts(updatedProducts);
-    toast.success("Product deleted successfully");
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      deleteProductMutation.mutate(id);
+    }
   };
 
   const openEditDialog = (product: Product) => {
@@ -118,12 +149,18 @@ export default function ProductManagement() {
       brand: product.brand,
       category: product.category,
       price: product.price,
-      retailPrice: product.retailPrice,
+      retail_price: product.retail_price,
       description: product.description || "",
       image: product.image
     });
     setIsEditDialogOpen(true);
   };
+
+  const filteredProducts = products.filter(product => 
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -200,7 +237,7 @@ export default function ProductManagement() {
                   />
                   <FormField
                     control={form.control}
-                    name="retailPrice"
+                    name="retail_price"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Retail Price ($)</FormLabel>
@@ -288,7 +325,7 @@ export default function ProductManagement() {
                 <TableCell>{product.brand}</TableCell>
                 <TableCell>{product.category}</TableCell>
                 <TableCell>${product.price}</TableCell>
-                <TableCell>${product.retailPrice}</TableCell>
+                <TableCell>${product.retail_price}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button 
@@ -387,7 +424,7 @@ export default function ProductManagement() {
                 />
                 <FormField
                   control={form.control}
-                  name="retailPrice"
+                  name="retail_price"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Retail Price ($)</FormLabel>

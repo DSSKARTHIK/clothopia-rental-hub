@@ -1,6 +1,9 @@
-
 import { useState } from "react";
-import { format, addDays, subDays } from "date-fns";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import type { Rental, Order } from "@/types/database";
 import { Calendar } from "@/components/ui/calendar";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
@@ -15,51 +18,58 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
 import { Search, Calendar as CalendarIcon, Users, DollarSign } from "lucide-react";
-import { MOCK_CLOTHING } from "@/lib/productData";
-
-// Generate random rental data
-const generateRentals = () => {
-  const statuses = ["active", "pending", "completed", "cancelled"];
-  const users = [
-    "john.doe@example.com",
-    "jane.smith@example.com", 
-    "mike.johnson@example.com",
-    "sarah.williams@example.com",
-    "alex.brown@example.com"
-  ];
-  
-  return MOCK_CLOTHING.slice(0, 8).map((item, index) => {
-    const startDate = subDays(new Date(), Math.floor(Math.random() * 10));
-    const endDate = addDays(startDate, Math.floor(Math.random() * 10) + 3);
-    const status = statuses[Math.floor(Math.random() * statuses.length)];
-    const user = users[Math.floor(Math.random() * users.length)];
-    
-    return {
-      id: `rental-${index + 1}`,
-      productId: item.id,
-      productName: item.name,
-      productImage: item.image,
-      user,
-      startDate,
-      endDate,
-      duration: Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)),
-      status,
-      totalPrice: Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)) * item.price
-    };
-  });
-};
 
 export default function RentalManagement() {
-  const [rentals, setRentals] = useState(generateRentals());
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  
-  const filteredRentals = rentals.filter(rental => {
+  const queryClient = useQueryClient();
+
+  // Fetch rentals with orders
+  const { data: rentals = [], isLoading } = useQuery({
+    queryKey: ['rentals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rentals')
+        .select(`
+          *,
+          products (*),
+          orders (*)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Update rental status mutation
+  const updateRentalStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: Rental['status'] }) => {
+      const { data, error } = await supabase
+        .from('rentals')
+        .update({ status })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rentals'] });
+      toast.success("Rental status updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to update rental status: " + error.message);
+    }
+  });
+
+  const filteredRentals = rentals.filter((rental: any) => {
     // Apply search filter
     const matchesSearch = 
-      rental.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rental.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rental.products?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rental.user_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rental.id.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Apply status filter
@@ -67,18 +77,17 @@ export default function RentalManagement() {
     
     // Apply date filter if a date is selected
     const matchesDate = !selectedDate || 
-      (rental.startDate <= selectedDate && rental.endDate >= selectedDate);
+      (new Date(rental.start_date) <= selectedDate && new Date(rental.end_date) >= selectedDate);
     
     return matchesSearch && matchesStatus && matchesDate;
   });
   
   // Calculate statistics
-  const activeRentals = rentals.filter(r => r.status === "active").length;
-  const totalRevenue = rentals.reduce((sum, r) => sum + r.totalPrice, 0);
-  const upcomingReturns = rentals.filter(r => 
+  const activeRentals = rentals.filter((r: any) => r.status === "active").length;
+  const totalRevenue = rentals.reduce((sum: number, r: any) => sum + r.totalPrice, 0);
+  const upcomingReturns = rentals.filter((r: any) => 
     r.status === "active" && 
-    r.endDate >= new Date() &&
-    r.endDate <= addDays(new Date(), 3)
+    new Date(r.end_date) >= new Date()
   ).length;
   
   const getStatusBadge = (status: string) => {
@@ -109,7 +118,7 @@ export default function RentalManagement() {
           <CardContent>
             <div className="text-2xl font-bold">{activeRentals} rentals</div>
             <p className="text-xs text-muted-foreground">
-              {upcomingReturns} returns due in next 3 days
+              {upcomingReturns} returns due soon
             </p>
           </CardContent>
         </Card>
@@ -191,26 +200,25 @@ export default function RentalManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredRentals.map((rental) => (
+            {filteredRentals.map((rental: any) => (
               <TableRow key={rental.id}>
                 <TableCell className="font-medium">{rental.id}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 overflow-hidden rounded-md">
                       <img 
-                        src={rental.productImage} 
-                        alt={rental.productName}
+                        src={rental.products?.image} 
+                        alt={rental.products?.name}
                         className="h-full w-full object-cover"
                       />
                     </div>
-                    <span className="truncate max-w-[150px]">{rental.productName}</span>
+                    <span className="truncate max-w-[150px]">{rental.products?.name}</span>
                   </div>
                 </TableCell>
-                <TableCell>{rental.user}</TableCell>
+                <TableCell>{rental.user_id}</TableCell>
                 <TableCell>
                   <div className="text-sm">
-                    <div>{format(rental.startDate, "MMM d")}-{format(rental.endDate, "MMM d, yyyy")}</div>
-                    <div className="text-muted-foreground">{rental.duration} days</div>
+                    <div>{format(new Date(rental.start_date), "MMM d")}-{format(new Date(rental.end_date), "MMM d, yyyy")}</div>
                   </div>
                 </TableCell>
                 <TableCell>{getStatusBadge(rental.status)}</TableCell>

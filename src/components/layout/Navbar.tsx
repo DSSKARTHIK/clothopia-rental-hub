@@ -1,172 +1,298 @@
 
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Search, User, Calendar, ShoppingBag, Menu, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Link, useNavigate } from "react-router-dom";
+import { Menu, Search, User, Heart } from "lucide-react";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
+import { useWishlist } from "@/contexts/WishlistContext";
+import { Badge } from "@/components/ui/badge";
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const location = useLocation();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+  const { itemCount: wishlistCount } = useWishlist();
 
-  // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
-      const isScrolled = window.scrollY > 10;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
+      const scrollTop = window.scrollY;
+      setIsScrolled(scrollTop > 50);
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [scrolled]);
+    window.addEventListener("scroll", handleScroll);
+    // Trigger initial check
+    handleScroll();
 
-  const isActive = (path: string) => location.pathname === path;
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
-  // Navigation items
-  const navItems = [
-    { name: "Home", path: "/" },
-    { name: "Browse", path: "/browse" },
-    { name: "Categories", path: "/categories" },
-    { name: "How It Works", path: "/how-it-works" },
-  ];
-
-  // Icon nav items
-  const iconNavItems = [
-    { icon: Search, path: "/search", label: "Search" },
-    { icon: Calendar, path: "/bookings", label: "My Bookings" },
-    { icon: User, path: "/profile", label: "Profile" },
-    { icon: ShoppingBag, path: "/cart", label: "Cart" },
-  ];
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
 
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-apple px-4 md:px-6",
-        scrolled
-          ? "bg-background/80 backdrop-blur-lg border-b py-3"
-          : "bg-transparent py-5"
+        "fixed top-0 left-0 right-0 z-40 transition-all duration-300",
+        isScrolled
+          ? "bg-background/70 backdrop-blur-xl shadow-sm py-4"
+          : "bg-transparent py-6"
       )}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-8">
-          <Link to="/" className="text-xl font-bold flex items-center">
-            <span className="text-primary tracking-tight">Clothopia</span>
-          </Link>
-
-          {/* Desktop navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={cn(
-                  "px-3 py-2 text-sm rounded-md transition-colors",
-                  isActive(item.path)
-                    ? "text-primary font-medium"
-                    : "text-muted-foreground hover:text-primary hover:bg-accent"
-                )}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        {/* Desktop action buttons */}
-        <div className="hidden md:flex items-center space-x-1">
-          {iconNavItems.map((item) => (
-            <Link
-              key={item.label}
-              to={item.path}
-              className={cn(
-                "p-2 rounded-full transition-colors",
-                isActive(item.path)
-                  ? "bg-accent text-primary"
-                  : "text-muted-foreground hover:text-primary hover:bg-accent"
-              )}
-              aria-label={item.label}
-            >
-              <item.icon className="h-5 w-5" />
-            </Link>
-          ))}
-          <Link to="/auth">
-            <Button variant="default" size="sm" className="ml-2">
-              Sign In
-            </Button>
-          </Link>
-        </div>
-
-        {/* Mobile menu */}
-        <div className="md:hidden">
+      <div className="container px-4 mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-4 md:gap-8">
+          {/* Mobile menu */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Menu">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                aria-label="Open menu"
+              >
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[80%] sm:w-[350px] pr-0">
-              <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between mb-6">
-                  <span className="text-xl font-bold">Clothopia</span>
-                  <SheetClose asChild>
-                    <Button variant="ghost" size="icon" aria-label="Close">
-                      <X className="h-5 w-5" />
-                    </Button>
-                  </SheetClose>
-                </div>
-                
-                <nav className="flex flex-col space-y-1 mb-6">
-                  {navItems.map((item) => (
-                    <SheetClose asChild key={item.name}>
+            <SheetContent side="left" className="w-[300px] sm:w-[350px] pt-16">
+              <nav className="flex flex-col gap-4">
+                <SheetClose asChild>
+                  <Link
+                    to="/"
+                    className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                  >
+                    Home
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    to="/browse"
+                    className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                  >
+                    Browse All
+                  </Link>
+                </SheetClose>
+                <div className="py-2">
+                  <p className="font-medium mb-2">Categories</p>
+                  <div className="pl-2 flex flex-col gap-2">
+                    <SheetClose asChild>
                       <Link
-                        to={item.path}
-                        className={cn(
-                          "px-4 py-3 rounded-md transition-colors text-base",
-                          isActive(item.path)
-                            ? "bg-accent text-primary font-medium"
-                            : "text-muted-foreground hover:text-primary hover:bg-accent"
-                        )}
+                        to="/categories/dresses"
+                        className="text-muted-foreground hover:text-primary transition-colors py-1"
                       >
-                        {item.name}
+                        Dresses
                       </Link>
                     </SheetClose>
-                  ))}
-                </nav>
-                
-                <div className="border-t pt-6 mt-auto">
-                  <div className="grid grid-cols-4 gap-2 mb-6">
-                    {iconNavItems.map((item) => (
-                      <SheetClose asChild key={item.label}>
-                        <Link
-                          to={item.path}
-                          className="flex flex-col items-center justify-center p-2 rounded-md transition-colors hover:bg-accent"
-                        >
-                          <item.icon className="h-5 w-5 mb-1" />
-                          <span className="text-xs">{item.label}</span>
-                        </Link>
-                      </SheetClose>
-                    ))}
+                    <SheetClose asChild>
+                      <Link
+                        to="/categories/suits"
+                        className="text-muted-foreground hover:text-primary transition-colors py-1"
+                      >
+                        Suits
+                      </Link>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <Link
+                        to="/categories/accessories"
+                        className="text-muted-foreground hover:text-primary transition-colors py-1"
+                      >
+                        Accessories
+                      </Link>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <Link
+                        to="/categories/outerwear"
+                        className="text-muted-foreground hover:text-primary transition-colors py-1"
+                      >
+                        Outerwear
+                      </Link>
+                    </SheetClose>
                   </div>
-                  
-                  <SheetClose asChild>
-                    <Link to="/auth" className="block w-full">
-                      <Button className="w-full" size="lg">
-                        Sign In
-                      </Button>
-                    </Link>
-                  </SheetClose>
                 </div>
-              </div>
+                <SheetClose asChild>
+                  <Link
+                    to="/wishlist"
+                    className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                  >
+                    Wishlist
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    to="/auth"
+                    className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                  >
+                    Login / Register
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    to="/dashboard"
+                    className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                  >
+                    My Account
+                  </Link>
+                </SheetClose>
+              </nav>
             </SheetContent>
           </Sheet>
+
+          {/* Logo */}
+          <Link to="/" className="text-xl font-bold tracking-tighter">
+            Clothopia
+          </Link>
+
+          {/* Desktop Navigation */}
+          <NavigationMenu className="hidden lg:flex">
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <Link to="/">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Home
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>Categories</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="grid grid-cols-2 gap-3 p-4 w-[400px]">
+                    <Link
+                      to="/categories/dresses"
+                      className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                    >
+                      <div className="text-sm font-medium leading-none">
+                        Dresses
+                      </div>
+                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                        Elegant dresses for any occasion
+                      </p>
+                    </Link>
+                    <Link
+                      to="/categories/suits"
+                      className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                    >
+                      <div className="text-sm font-medium leading-none">
+                        Suits
+                      </div>
+                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                        Premium suits for formal events
+                      </p>
+                    </Link>
+                    <Link
+                      to="/categories/accessories"
+                      className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                    >
+                      <div className="text-sm font-medium leading-none">
+                        Accessories
+                      </div>
+                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                        Complete your look with our accessories
+                      </p>
+                    </Link>
+                    <Link
+                      to="/categories/outerwear"
+                      className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                    >
+                      <div className="text-sm font-medium leading-none">
+                        Outerwear
+                      </div>
+                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                        Stylish jackets and coats
+                      </p>
+                    </Link>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/browse">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Browse All
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Search input (only visible on larger screens) */}
+          <form
+            onSubmit={handleSearch}
+            className="hidden md:flex relative max-w-md"
+          >
+            <Input
+              type="text"
+              placeholder="Search..."
+              className="w-[200px] lg:w-[300px]"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <Button
+              type="submit"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </form>
+
+          {/* Mobile search button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => navigate("/search")}
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+          
+          {/* Wishlist */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative"
+            onClick={() => navigate("/wishlist")}
+          >
+            <Heart className="h-5 w-5" />
+            {wishlistCount > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center rounded-full text-[10px]"
+              >
+                {wishlistCount}
+              </Badge>
+            )}
+          </Button>
+
+          {/* Account */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/dashboard")}
+          >
+            <User className="h-5 w-5" />
+          </Button>
         </div>
       </div>
     </header>

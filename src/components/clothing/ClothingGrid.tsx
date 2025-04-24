@@ -7,20 +7,22 @@ interface ClothingGridProps {
   category?: string;
   filters?: any;
   searchQuery?: string;
+  items?: typeof MOCK_CLOTHING;
 }
 
 export default function ClothingGrid({ 
   category,
   filters,
-  searchQuery
+  searchQuery,
+  items
 }: ClothingGridProps) {
   const [loading, setLoading] = useState(false);
 
   // In a real app, we would filter the items based on the provided filters
   // For now, we'll just simulate a filter if category is provided
-  let displayItems = MOCK_CLOTHING;
+  let displayItems = items || MOCK_CLOTHING;
   
-  if (category) {
+  if (category && !items) {
     displayItems = MOCK_CLOTHING.filter(item => 
       item.category.toLowerCase() === category.toLowerCase()
     );

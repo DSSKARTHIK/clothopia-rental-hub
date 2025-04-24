@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Share2, Heart, ChevronDown, ChevronUp } from "lucide-react";
+import { Share2, Heart, ChevronDown, ChevronUp, ShoppingBag } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 
@@ -24,7 +25,10 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import RentalCalendar from "@/components/booking/RentalCalendar";
 import RentalSummary from "@/components/booking/RentalSummary";
-import { getProductById } from "@/lib/productData";
+import { getProductById, getRelatedProducts } from "@/lib/productData";
+import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
+import ClothingCard from "@/components/clothing/ClothingCard";
 
 export default function ClothingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -32,7 +36,6 @@ export default function ClothingDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [rentalDates, setRentalDates] = useState<{
     startDate: Date | undefined;
     endDate: Date | undefined;
@@ -41,6 +44,10 @@ export default function ClothingDetail() {
     endDate: undefined,
   });
   const [insuranceOption, setInsuranceOption] = useState<"basic" | "premium" | "none">("basic");
+  const [relatedItems, setRelatedItems] = useState<any[]>([]);
+  const { addItem } = useCart();
+  const { isInWishlist, addItem: addToWishlist, removeItem: removeFromWishlist } = useWishlist();
+  const [isFavorite, setIsFavorite] = useState(false);
   
   useEffect(() => {
     setIsLoading(true);
@@ -75,12 +82,22 @@ export default function ClothingDetail() {
           availableSizes: ["XS", "S", "M", "L"],
         };
         setItem(productWithImages);
+        
+        // Get related items
+        if (product.category) {
+          const related = getRelatedProducts(product.id, product.category);
+          setRelatedItems(related);
+        }
+        
+        // Check if item is in wishlist
+        const inWishlist = isInWishlist(product.id);
+        setIsFavorite(inWishlist);
       }
       setIsLoading(false);
     }, 600);
     
     return () => clearTimeout(timer);
-  }, [id]);
+  }, [id, isInWishlist]);
   
   const handleDateChange = (dates: { startDate: Date | undefined; endDate: Date | undefined }) => {
     setRentalDates(dates);
@@ -96,13 +113,44 @@ export default function ClothingDetail() {
   };
   
   const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    toast.success(isFavorite ? "Removed from favorites" : "Added to favorites");
+    if (id) {
+      if (isFavorite) {
+        removeFromWishlist(id);
+      } else {
+        addToWishlist(id);
+      }
+      setIsFavorite(!isFavorite);
+    }
   };
   
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     toast.success("Link copied to clipboard");
+  };
+  
+  const handleAddToCart = () => {
+    if (!selectedSize) {
+      toast.error("Please select a size");
+      return;
+    }
+    
+    if (!rentalDates.startDate || !rentalDates.endDate) {
+      toast.error("Please select rental dates");
+      return;
+    }
+    
+    // Add item to cart
+    addItem({
+      id: item.id,
+      quantity: 1,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      size: selectedSize,
+      rentalStart: rentalDates.startDate,
+      rentalEnd: rentalDates.endDate,
+      insuranceOption,
+    });
   };
   
   if (isLoading || !item) {
@@ -133,6 +181,13 @@ export default function ClothingDetail() {
       </div>
     );
   }
+  
+  // Calculate rental days and total cost
+  const rentalDays = rentalDates.startDate && rentalDates.endDate
+    ? Math.ceil((rentalDates.endDate.getTime() - rentalDates.startDate.getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
+  
+  const totalCost = item.price * rentalDays;
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -284,14 +339,25 @@ export default function ClothingDetail() {
                       />
                       
                       {rentalDates.startDate && (
-                        <RentalSummary
-                          itemName={item.name}
-                          dailyPrice={item.price}
-                          startDate={rentalDates.startDate}
-                          endDate={rentalDates.endDate}
-                          insuranceOption={insuranceOption}
-                          onInsuranceChange={handleInsuranceChange}
-                        />
+                        <div className="space-y-6">
+                          <RentalSummary
+                            itemName={item.name}
+                            dailyPrice={item.price}
+                            startDate={rentalDates.startDate}
+                            endDate={rentalDates.endDate}
+                            insuranceOption={insuranceOption}
+                            onInsuranceChange={handleInsuranceChange}
+                          />
+                          
+                          <Button 
+                            onClick={handleAddToCart} 
+                            className="w-full"
+                            disabled={!selectedSize || !rentalDates.startDate || !rentalDates.endDate}
+                          >
+                            <ShoppingBag className="mr-2 h-4 w-4" />
+                            Add to Cart
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </TabsContent>
@@ -334,11 +400,27 @@ export default function ClothingDetail() {
           </div>
           
           {/* Related Items Section */}
-          <section className="mt-20">
-            <h2 className="text-2xl font-bold mb-6">You May Also Like</h2>
-            {/* Related items would go here */}
-            {/* For brevity, we're not implementing this fully */}
-          </section>
+          {relatedItems.length > 0 && (
+            <section className="mt-20">
+              <h2 className="text-2xl font-bold mb-6">You May Also Like</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {relatedItems.map((item) => (
+                  <ClothingCard
+                    key={item.id}
+                    id={item.id}
+                    name={item.name}
+                    price={item.price}
+                    retailPrice={item.retailPrice}
+                    image={item.image}
+                    brand={item.brand}
+                    category={item.category}
+                    isNew={item.isNew}
+                    isFavorite={isInWishlist(item.id)}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </main>
       

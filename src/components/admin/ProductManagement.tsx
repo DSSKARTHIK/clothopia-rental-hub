@@ -31,11 +31,14 @@ const productSchema = z.object({
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
+// Define a more specific type for our products based on MOCK_CLOTHING
+type Product = typeof MOCK_CLOTHING[0];
+
 export default function ProductManagement() {
   const [products, setProducts] = useState(MOCK_CLOTHING);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState<(typeof MOCK_CLOTHING)[0] | null>(null);
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   const form = useForm<ProductFormValues>({
@@ -59,9 +62,15 @@ export default function ProductManagement() {
 
   const handleAddProduct = (values: ProductFormValues) => {
     // In a real app, this would call an API
-    const newProduct = {
+    const newProduct: Product = {
       id: Math.random().toString(36).substring(7),
-      ...values,
+      name: values.name,
+      brand: values.brand,
+      category: values.category,
+      price: values.price,
+      retailPrice: values.retailPrice,
+      description: values.description,
+      image: values.image,
       isNew: true
     };
     
@@ -77,7 +86,16 @@ export default function ProductManagement() {
     // In a real app, this would call an API
     const updatedProducts = products.map(product => 
       product.id === currentProduct.id 
-        ? { ...product, ...values } 
+        ? { 
+            ...product, 
+            name: values.name,
+            brand: values.brand,
+            category: values.category,
+            price: values.price,
+            retailPrice: values.retailPrice,
+            description: values.description,
+            image: values.image
+          } 
         : product
     );
     
@@ -93,7 +111,7 @@ export default function ProductManagement() {
     toast.success("Product deleted successfully");
   };
 
-  const openEditDialog = (product: (typeof MOCK_CLOTHING)[0]) => {
+  const openEditDialog = (product: Product) => {
     setCurrentProduct(product);
     form.reset({
       name: product.name,

@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { useToast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminLayout from "@/components/admin/AdminLayout";
 import ProductManagement from "@/components/admin/ProductManagement";

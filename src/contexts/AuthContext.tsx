@@ -11,12 +11,17 @@ export type Profile = {
   avatar_url: string | null;
 };
 
+type SignUpResponse = {
+  user: User | null;
+  session: Session | null;
+};
+
 type AuthContextType = {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
   isLoading: boolean;
-  signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<void>;
+  signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<SignUpResponse>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<Profile>) => Promise<void>;

@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { Session, User } from "@supabase/supabase-js";
+import { Session, User, WeakPassword } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -16,13 +16,19 @@ type SignUpResponse = {
   session: Session | null;
 };
 
+type SignInResponse = {
+  user: User | null;
+  session: Session | null;
+  weakPassword?: WeakPassword | null;
+};
+
 type AuthContextType = {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
   isLoading: boolean;
   signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<SignUpResponse>;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<SignInResponse>;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<Profile>) => Promise<void>;
 };

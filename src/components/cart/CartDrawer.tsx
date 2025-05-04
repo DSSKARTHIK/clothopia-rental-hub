@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -24,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function CartDrawer() {
   const [open, setOpen] = useState(false);
-  const { items, itemCount, removeItem, updateItemQuantity, getSubtotal } = useCart();
+  const { items, itemCount, removeItem, updateItemQuantity, getSubtotal, formatCurrency } = useCart();
   const navigate = useNavigate();
 
   const handleCheckout = () => {
@@ -133,7 +134,7 @@ export default function CartDrawer() {
                               <Plus className="h-3 w-3" />
                             </button>
                           </div>
-                          <div className="font-medium">₹{itemTotal}</div>
+                          <div className="font-medium">{formatCurrency(itemTotal)}</div>
                         </div>
                       </div>
                     </div>
@@ -147,20 +148,20 @@ export default function CartDrawer() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal</span>
-                  <span>₹{getSubtotal()}</span>
+                  <span>{formatCurrency(getSubtotal())}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Insurance</span>
-                  <span>₹0</span>
+                  <span>{formatCurrency(0)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Delivery</span>
-                  <span>₹0</span>
+                  <span>{formatCurrency(0)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-medium">
                   <span>Total</span>
-                  <span>₹{getSubtotal()}</span>
+                  <span>{formatCurrency(getSubtotal())}</span>
                 </div>
               </div>
 

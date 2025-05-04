@@ -5,8 +5,10 @@ import { CheckCircle, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { useCart } from "@/contexts/CartContext";
 
 export default function OrderConfirmation() {
+  const { formatCurrency } = useCart();
   // For a real app, you would get the order details from a state management system or API
   const orderNumber = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
 

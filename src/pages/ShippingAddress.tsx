@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,14 @@ export default function ShippingAddress() {
     }
   ];
 
+  // Auto-select a default address on page load
+  useEffect(() => {
+    const defaultAddress = savedAddresses.find(addr => addr.is_default) || savedAddresses[0];
+    if (defaultAddress) {
+      setSelectedAddress(defaultAddress);
+    }
+  }, []);
+
   const handleContinue = () => {
     if (!selectedAddress) {
       toast.error("Please select or add an address to continue");
@@ -62,10 +70,12 @@ export default function ShippingAddress() {
     });
   };
 
-  if (items.length === 0) {
-    navigate('/');
-    return null;
-  }
+  // Check if cart is empty and redirect to homepage if it is
+  useEffect(() => {
+    if (items.length === 0) {
+      navigate('/');
+    }
+  }, [items, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col">

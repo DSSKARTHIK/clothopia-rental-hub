@@ -24,6 +24,7 @@ interface CartContextType {
   updateItemQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   getSubtotal: () => number;
+  formatCurrency: (amount: number) => string;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -97,6 +98,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, 0);
   };
 
+  // Format currency in Indian Rupees
+  const formatCurrency = (amount: number) => {
+    return `₹${amount.toLocaleString('en-IN')}`;
+  };
+
   const itemCount = items.reduce((count, item) => count + item.quantity, 0);
 
   return (
@@ -109,6 +115,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         updateItemQuantity,
         clearCart,
         getSubtotal,
+        formatCurrency,
       }}
     >
       {children}

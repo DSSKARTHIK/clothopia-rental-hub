@@ -51,7 +51,7 @@ export default function RentalSummary({
   // Calculate costs
   const rentalCost = dailyPrice * rentalDays;
   const insuranceCost = calculateInsuranceCost(insuranceOption, rentalCost);
-  const deliveryFee = 15;
+  const deliveryFee = 0; // Free delivery
   const subtotal = rentalCost + insuranceCost + deliveryFee;
   const discount = promoApplied ? promoDiscount : 0;
   const total = subtotal - discount;
@@ -102,7 +102,7 @@ export default function RentalSummary({
       <CardContent className="space-y-4">
         <div>
           <h3 className="font-medium mb-2">{itemName}</h3>
-          <div className="text-sm">${dailyPrice} per day</div>
+          <div className="text-sm">₹{dailyPrice} per day</div>
         </div>
         
         {startDate && endDate ? (
@@ -151,7 +151,7 @@ export default function RentalSummary({
               <AccordionContent className="text-xs space-y-2">
                 <div className="space-y-1">
                   <div className="font-medium">Basic Protection</div>
-                  <p>Covers accidental damage up to $200. You're responsible for any damage beyond this limit.</p>
+                  <p>Covers accidental damage up to ₹10,000. You're responsible for any damage beyond this limit.</p>
                 </div>
                 <div className="space-y-1">
                   <div className="font-medium">Premium Protection</div>
@@ -176,26 +176,26 @@ export default function RentalSummary({
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Rental cost</span>
-            <span>${rentalCost.toFixed(2)}</span>
+            <span>₹{rentalCost.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Protection plan</span>
-            <span>${insuranceCost.toFixed(2)}</span>
+            <span>₹{insuranceCost.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Delivery & pickup</span>
-            <span>${deliveryFee.toFixed(2)}</span>
+            <span>₹{deliveryFee.toFixed(2)}</span>
           </div>
           {promoApplied && (
             <div className="flex justify-between text-sm text-green-600">
               <span>Discount (FIRST20)</span>
-              <span>-${discount.toFixed(2)}</span>
+              <span>-₹{discount.toFixed(2)}</span>
             </div>
           )}
           <div className="border-t pt-2 mt-2">
             <div className="flex justify-between font-medium">
               <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+              <span>₹{total.toFixed(2)}</span>
             </div>
           </div>
         </div>

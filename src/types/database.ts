@@ -36,11 +36,25 @@ export interface Order {
   id: string;
   user_id: string;
   rental_id: string;
-  payment_method: 'cash_on_delivery' | 'online';
+  payment_method: 'cash_on_delivery' | 'online' | 'upi' | 'net_banking' | 'credit_card' | 'debit_card';
   status: 'pending' | 'confirmed' | 'delivered' | 'cancelled';
   total_amount: number;
   delivery_address: string;
   phone_number: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Address {
+  id: string;
+  user_id: string;
+  name: string;
+  street: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  phone: string;
+  is_default: boolean;
   created_at?: string;
   updated_at?: string;
 }

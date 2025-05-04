@@ -134,7 +134,7 @@ export default function CartDrawer() {
                               <Plus className="h-3 w-3" />
                             </button>
                           </div>
-                          <div className="font-medium">${itemTotal}</div>
+                          <div className="font-medium">₹{itemTotal}</div>
                         </div>
                       </div>
                     </div>
@@ -148,20 +148,20 @@ export default function CartDrawer() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal</span>
-                  <span>${getSubtotal()}</span>
+                  <span>₹{getSubtotal()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Insurance</span>
-                  <span>$0</span>
+                  <span>₹0</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Delivery</span>
-                  <span>$0</span>
+                  <span>₹0</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-medium">
                   <span>Total</span>
-                  <span>${getSubtotal()}</span>
+                  <span>₹{getSubtotal()}</span>
                 </div>
               </div>
 

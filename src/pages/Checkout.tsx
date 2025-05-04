@@ -5,13 +5,14 @@ import {
   CreditCard,
   ShoppingBag,
   Truck,
-  CheckCircle,
   ChevronRight,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -27,45 +28,80 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/components/ui/radio-group";
 import { format } from "date-fns";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+import AddressInput from "@/components/checkout/AddressInput";
 
 export default function Checkout() {
   const [activeTab, setActiveTab] = useState("information");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { items, getSubtotal, clearCart } = useCart();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
 
   // Form fields
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
+    name: profile?.first_name ? `${profile.first_name} ${profile.last_name || ''}`.trim() : "",
+    email: user?.email || "",
     phone: "",
     address: "",
     city: "",
     state: "",
-    zipCode: "",
+    postalCode: "",
+    paymentMethod: "cash_on_delivery" as "cash_on_delivery" | "credit_card" | "debit_card" | "upi" | "net_banking",
     cardName: "",
     cardNumber: "",
     cardExpiry: "",
     cardCvc: "",
+    upiId: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handlePaymentMethodChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, paymentMethod: value as any }));
+  };
+
   const handleSubmitShipping = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate shipping information
+    if (!formData.name || !formData.phone || !formData.address || !formData.city || !formData.state || !formData.postalCode) {
+      toast.error("Please fill in all required shipping information");
+      return;
+    }
+    
     setActiveTab("payment");
   };
 
   const handleSubmitPayment = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    // Validate payment information based on selected method
+    if (formData.paymentMethod === "credit_card" || formData.paymentMethod === "debit_card") {
+      if (!formData.cardName || !formData.cardNumber || !formData.cardExpiry || !formData.cardCvc) {
+        toast.error("Please fill in all card details");
+        setIsSubmitting(false);
+        return;
+      }
+    } else if (formData.paymentMethod === "upi") {
+      if (!formData.upiId) {
+        toast.error("Please enter a valid UPI ID");
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
     // Simulate payment processing
     setTimeout(() => {
@@ -124,7 +160,7 @@ export default function Checkout() {
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-2 mb-8">
                   <TabsTrigger value="information">
-                    <ShoppingBag className="h-4 w-4 mr-2" />
+                    <MapPin className="h-4 w-4 mr-2" />
                     Shipping
                   </TabsTrigger>
                   <TabsTrigger value="payment" disabled={activeTab === "information"}>
@@ -165,6 +201,7 @@ export default function Checkout() {
                               required
                               value={formData.email}
                               onChange={handleChange}
+                              disabled={!!user?.email}
                             />
                           </div>
                         </div>
@@ -173,7 +210,7 @@ export default function Checkout() {
                           <Input
                             id="phone"
                             name="phone"
-                            placeholder="(123) 456-7890"
+                            placeholder="10-digit mobile number"
                             required
                             value={formData.phone}
                             onChange={handleChange}
@@ -181,10 +218,10 @@ export default function Checkout() {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="address">Street Address</Label>
-                          <Input
+                          <Textarea
                             id="address"
                             name="address"
-                            placeholder="123 Main St"
+                            placeholder="House/Flat No, Building, Street, Area"
                             required
                             value={formData.address}
                             onChange={handleChange}
@@ -196,7 +233,7 @@ export default function Checkout() {
                             <Input
                               id="city"
                               name="city"
-                              placeholder="New York"
+                              placeholder="Mumbai"
                               required
                               value={formData.city}
                               onChange={handleChange}
@@ -207,20 +244,20 @@ export default function Checkout() {
                             <Input
                               id="state"
                               name="state"
-                              placeholder="NY"
+                              placeholder="Maharashtra"
                               required
                               value={formData.state}
                               onChange={handleChange}
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="zipCode">ZIP Code</Label>
+                            <Label htmlFor="postalCode">PIN Code</Label>
                             <Input
-                              id="zipCode"
-                              name="zipCode"
-                              placeholder="10001"
+                              id="postalCode"
+                              name="postalCode"
+                              placeholder="400001"
                               required
-                              value={formData.zipCode}
+                              value={formData.postalCode}
                               onChange={handleChange}
                             />
                           </div>
@@ -240,57 +277,130 @@ export default function Checkout() {
                     <CardHeader>
                       <CardTitle>Payment Information</CardTitle>
                       <CardDescription>
-                        Enter your payment details to complete your order
+                        Select your preferred payment method
                       </CardDescription>
                     </CardHeader>
                     <form onSubmit={handleSubmitPayment}>
-                      <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="cardName">Name on Card</Label>
-                          <Input
-                            id="cardName"
-                            name="cardName"
-                            placeholder="John Doe"
-                            required
-                            value={formData.cardName}
-                            onChange={handleChange}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="cardNumber">Card Number</Label>
-                          <Input
-                            id="cardNumber"
-                            name="cardNumber"
-                            placeholder="4242 4242 4242 4242"
-                            required
-                            value={formData.cardNumber}
-                            onChange={handleChange}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="cardExpiry">Expiry Date</Label>
-                            <Input
-                              id="cardExpiry"
-                              name="cardExpiry"
-                              placeholder="MM/YY"
-                              required
-                              value={formData.cardExpiry}
-                              onChange={handleChange}
-                            />
+                      <CardContent className="space-y-6">
+                        <RadioGroup 
+                          value={formData.paymentMethod} 
+                          onValueChange={handlePaymentMethodChange}
+                          className="gap-4"
+                        >
+                          <div className="flex items-center space-x-2 border rounded-md p-4 cursor-pointer hover:bg-muted/50">
+                            <RadioGroupItem value="cash_on_delivery" id="cod" />
+                            <Label htmlFor="cod" className="cursor-pointer flex flex-col">
+                              <span className="font-medium">Cash on Delivery</span>
+                              <span className="text-sm text-muted-foreground">Pay when your rental arrives</span>
+                            </Label>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="cardCvc">CVC</Label>
-                            <Input
-                              id="cardCvc"
-                              name="cardCvc"
-                              placeholder="123"
-                              required
-                              value={formData.cardCvc}
-                              onChange={handleChange}
-                            />
+                          
+                          <div className="flex items-center space-x-2 border rounded-md p-4 cursor-pointer hover:bg-muted/50">
+                            <RadioGroupItem value="credit_card" id="credit" />
+                            <Label htmlFor="credit" className="cursor-pointer flex flex-col">
+                              <span className="font-medium">Credit Card</span>
+                              <span className="text-sm text-muted-foreground">Pay securely with your credit card</span>
+                            </Label>
                           </div>
-                        </div>
+                          
+                          <div className="flex items-center space-x-2 border rounded-md p-4 cursor-pointer hover:bg-muted/50">
+                            <RadioGroupItem value="debit_card" id="debit" />
+                            <Label htmlFor="debit" className="cursor-pointer flex flex-col">
+                              <span className="font-medium">Debit Card</span>
+                              <span className="text-sm text-muted-foreground">Pay directly from your bank account</span>
+                            </Label>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2 border rounded-md p-4 cursor-pointer hover:bg-muted/50">
+                            <RadioGroupItem value="upi" id="upi" />
+                            <Label htmlFor="upi" className="cursor-pointer flex flex-col">
+                              <span className="font-medium">UPI</span>
+                              <span className="text-sm text-muted-foreground">Pay using Google Pay, PhonePe, or other UPI apps</span>
+                            </Label>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2 border rounded-md p-4 cursor-pointer hover:bg-muted/50">
+                            <RadioGroupItem value="net_banking" id="netbanking" />
+                            <Label htmlFor="netbanking" className="cursor-pointer flex flex-col">
+                              <span className="font-medium">Net Banking</span>
+                              <span className="text-sm text-muted-foreground">Pay directly from your bank account</span>
+                            </Label>
+                          </div>
+                        </RadioGroup>
+
+                        {/* Card details form */}
+                        {(formData.paymentMethod === "credit_card" || formData.paymentMethod === "debit_card") && (
+                          <div className="space-y-4 border-t pt-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="cardName">Name on Card</Label>
+                              <Input
+                                id="cardName"
+                                name="cardName"
+                                placeholder="Name on card"
+                                value={formData.cardName}
+                                onChange={handleChange}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="cardNumber">Card Number</Label>
+                              <Input
+                                id="cardNumber"
+                                name="cardNumber"
+                                placeholder="1234 5678 9012 3456"
+                                value={formData.cardNumber}
+                                onChange={handleChange}
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="cardExpiry">Expiry Date</Label>
+                                <Input
+                                  id="cardExpiry"
+                                  name="cardExpiry"
+                                  placeholder="MM/YY"
+                                  value={formData.cardExpiry}
+                                  onChange={handleChange}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="cardCvc">CVV</Label>
+                                <Input
+                                  id="cardCvc"
+                                  name="cardCvc"
+                                  placeholder="123"
+                                  value={formData.cardCvc}
+                                  onChange={handleChange}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* UPI form */}
+                        {formData.paymentMethod === "upi" && (
+                          <div className="space-y-4 border-t pt-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="upiId">UPI ID</Label>
+                              <Input
+                                id="upiId"
+                                name="upiId"
+                                placeholder="name@upi"
+                                value={formData.upiId}
+                                onChange={handleChange}
+                              />
+                              <p className="text-xs text-muted-foreground">Enter your UPI ID (e.g. name@okicici, phone@paytm)</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Net banking form would go here */}
+                        {formData.paymentMethod === "net_banking" && (
+                          <div className="space-y-4 border-t pt-4">
+                            <p className="text-sm">Select your bank from the list and you will be redirected to your bank's website to complete the payment.</p>
+                            {/* Bank selection would go here */}
+                            <p className="text-xs text-muted-foreground">For demo purposes, we'll simulate the bank selection process</p>
+                          </div>
+                        )}
                       </CardContent>
                       <CardFooter className="flex justify-between">
                         <Button
@@ -349,7 +459,7 @@ export default function Checkout() {
                                 {item.name}
                               </h4>
                               <span className="font-medium text-sm">
-                                ${itemTotal}
+                                ₹{itemTotal}
                               </span>
                             </div>
                             <div className="text-xs text-muted-foreground">
@@ -378,20 +488,20 @@ export default function Checkout() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Subtotal</span>
-                      <span>${getSubtotal()}</span>
+                      <span>₹{getSubtotal()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Insurance</span>
-                      <span>$0</span>
+                      <span>₹0</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Delivery</span>
-                      <span>$0</span>
+                      <span>₹0</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-medium">
                       <span>Total</span>
-                      <span>${getSubtotal()}</span>
+                      <span>₹{getSubtotal()}</span>
                     </div>
                   </div>
 

@@ -18,6 +18,9 @@ export default function Payment() {
   const { clearCart } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  console.log("Payment page loaded with location state:", location.state);
+  
   const { shippingDetails } = location.state || {};
 
   const [formData, setFormData] = useState({

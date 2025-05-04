@@ -54,6 +54,8 @@ export default function ShippingAddress() {
       return;
     }
     
+    console.log("Navigating to payment page with address:", selectedAddress);
+    
     // Navigate to payment page with address details
     navigate('/payment', { 
       state: { shippingDetails: selectedAddress } 

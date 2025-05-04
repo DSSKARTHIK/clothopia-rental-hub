@@ -27,7 +27,14 @@ import Admin from "./pages/Admin";
 // Components
 import CartDrawer from "./components/cart/CartDrawer";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+    },
+  }
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

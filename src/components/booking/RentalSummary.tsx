@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format, differenceInDays } from "date-fns";
 import { Calendar, Truck, Shield, CreditCard } from "lucide-react";
@@ -21,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface RentalSummaryProps {
   itemName: string;
@@ -42,6 +42,7 @@ export default function RentalSummary({
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
   const [promoDiscount, setPromoDiscount] = useState(0);
+  const navigate = useNavigate();
   
   // Calculate rental duration
   const rentalDays = startDate && endDate
@@ -91,7 +92,8 @@ export default function RentalSummary({
       return;
     }
     
-    toast.success("Redirecting to checkout...");
+    // Navigate to shipping address page
+    navigate('/shipping-address');
   };
   
   return (

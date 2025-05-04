@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -30,7 +29,7 @@ export default function CartDrawer() {
 
   const handleCheckout = () => {
     setOpen(false);
-    navigate("/checkout");
+    navigate("/shipping-address");
   };
 
   const formatDate = (date?: Date) => {

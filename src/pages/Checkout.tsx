@@ -1,6 +1,5 @@
-
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   CreditCard,
   ShoppingBag,
@@ -45,6 +44,14 @@ export default function Checkout() {
   const { items, getSubtotal, clearCart } = useCart();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirect to the new shipping address page if coming from home
+  useEffect(() => {
+    if (items.length > 0 && location.pathname === '/checkout' && !location.state?.fromLegacy) {
+      navigate('/shipping-address');
+    }
+  }, [items.length, location.pathname, location.state, navigate]);
 
   // Form fields
   const [formData, setFormData] = useState({

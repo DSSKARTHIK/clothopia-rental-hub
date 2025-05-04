@@ -18,6 +18,8 @@ import UserDashboard from "./pages/UserDashboard";
 import NotFound from "./pages/NotFound";
 import Search from "./pages/Search";
 import Checkout from "./pages/Checkout";
+import ShippingAddress from "./pages/ShippingAddress";
+import Payment from "./pages/Payment";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import Wishlist from "./pages/Wishlist";
 import Admin from "./pages/Admin";
@@ -45,6 +47,8 @@ const App = () => (
                 <Route path="/dashboard" element={<UserDashboard />} />
                 <Route path="/search" element={<Search />} />
                 <Route path="/checkout" element={<Checkout />} />
+                <Route path="/shipping-address" element={<ShippingAddress />} />
+                <Route path="/payment" element={<Payment />} />
                 <Route path="/order-confirmation" element={<OrderConfirmation />} />
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/admin" element={<Admin />} />

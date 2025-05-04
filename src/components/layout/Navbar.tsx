@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, Search, User, Heart } from "lucide-react";
+import { Menu, Search, User, Heart, LogIn, LogOut } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -22,12 +22,22 @@ import {
 import { cn } from "@/lib/utils";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const { itemCount: wishlistCount } = useWishlist();
+  const { user, profile, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,6 +59,11 @@ export default function Navbar() {
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
     }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
   };
 
   return (
@@ -137,22 +152,37 @@ export default function Navbar() {
                     Wishlist
                   </Link>
                 </SheetClose>
-                <SheetClose asChild>
-                  <Link
-                    to="/auth"
-                    className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
-                  >
-                    Login / Register
-                  </Link>
-                </SheetClose>
-                <SheetClose asChild>
-                  <Link
-                    to="/dashboard"
-                    className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
-                  >
-                    My Account
-                  </Link>
-                </SheetClose>
+                {user ? (
+                  <>
+                    <SheetClose asChild>
+                      <Link
+                        to="/dashboard"
+                        className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                      >
+                        My Account
+                      </Link>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 py-2 hover:text-primary transition-colors text-left"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </button>
+                    </SheetClose>
+                  </>
+                ) : (
+                  <SheetClose asChild>
+                    <Link
+                      to="/auth"
+                      className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                    >
+                      <LogIn className="h-4 w-4" />
+                      Login / Register
+                    </Link>
+                  </SheetClose>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
@@ -286,13 +316,37 @@ export default function Navbar() {
           </Button>
 
           {/* Account */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/dashboard")}
-          >
-            <User className="h-5 w-5" />
-          </Button>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <User className="h-5 w-5" />
+                  <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>
+                  {profile?.first_name ? `${profile.first_name} ${profile.last_name || ''}` : 'My Account'}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                  Dashboard
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/auth")}
+            >
+              <LogIn className="h-5 w-5" />
+            </Button>
+          )}
         </div>
       </div>
     </header>

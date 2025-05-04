@@ -44,3 +44,11 @@ export interface Order {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface Profile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  updated_at?: string;
+}

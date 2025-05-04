@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Schemas for form validation
 const loginSchema = z.object({
@@ -27,7 +28,8 @@ const loginSchema = z.object({
 });
 
 const signupSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  firstName: z.string().min(2, { message: "First name must be at least 2 characters" }),
+  lastName: z.string().min(2, { message: "Last name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   confirmPassword: z.string(),
@@ -44,6 +46,7 @@ export default function AuthForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
   const navigate = useNavigate();
+  const { signIn, signUp } = useAuth();
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -58,7 +61,8 @@ export default function AuthForm() {
   const signupForm = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -69,16 +73,9 @@ export default function AuthForm() {
   async function onLoginSubmit(data: LoginFormValues) {
     setIsLoading(true);
     try {
-      // Here would be the actual authentication call
-      console.log("Login data:", data);
-      
-      // Mock successful login
-      setTimeout(() => {
-        toast.success("Login successful!");
-        navigate("/browse");
-      }, 1000);
+      await signIn(data.email, data.password);
+      navigate("/browse");
     } catch (error) {
-      toast.error("Failed to login. Please try again.");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -89,16 +86,9 @@ export default function AuthForm() {
   async function onSignupSubmit(data: SignupFormValues) {
     setIsLoading(true);
     try {
-      // Here would be the actual registration call
-      console.log("Signup data:", data);
-      
-      // Mock successful signup
-      setTimeout(() => {
-        toast.success("Account created successfully! Please check your email to verify your account.");
-        setActiveTab("login");
-      }, 1000);
+      await signUp(data.email, data.password, data.firstName, data.lastName);
+      setActiveTab("login");
     } catch (error) {
-      toast.error("Failed to create account. Please try again.");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -215,19 +205,45 @@ export default function AuthForm() {
                   onSubmit={signupForm.handleSubmit(onSignupSubmit)}
                   className="space-y-6"
                 >
-                  <FormField
-                    control={signupForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={signupForm.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <User className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                              <Input
+                                placeholder="John"
+                                className="pl-10"
+                                {...field}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={signupForm.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Doe"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   <FormField
                     control={signupForm.control}

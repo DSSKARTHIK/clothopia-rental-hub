@@ -77,6 +77,22 @@ export default function Payment() {
   const shipping = 0;
   const total = subtotal + shipping;
 
+  // If no shipping details and not in the process of redirecting, show a loading state
+  if (!shippingDetails) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 pt-24 px-4 md:px-6 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p>Redirecting to shipping address...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />

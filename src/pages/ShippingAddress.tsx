@@ -70,9 +70,10 @@ export default function ShippingAddress() {
     });
   };
 
-  // Check if cart is empty and redirect to homepage if it is
+  // Don't redirect empty cart if coming from checkout flow
   useEffect(() => {
-    if (items.length === 0) {
+    if (items.length === 0 && !window.location.search.includes('fromCheckout')) {
+      console.log("Empty cart detected, redirecting to homepage");
       navigate('/');
     }
   }, [items, navigate]);

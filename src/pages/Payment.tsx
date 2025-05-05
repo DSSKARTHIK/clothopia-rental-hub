@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { CreditCard, ChevronRight } from "lucide-react";
@@ -26,6 +25,7 @@ export default function Payment() {
   // Redirect to shipping if no shipping details
   useEffect(() => {
     if (!shippingDetails) {
+      console.log("No shipping details found, redirecting to shipping page");
       toast.error("Please select a shipping address first");
       navigate('/shipping-address');
     }

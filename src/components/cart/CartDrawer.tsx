@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -30,6 +29,8 @@ export default function CartDrawer() {
 
   const handleCheckout = () => {
     setOpen(false);
+    // Navigate directly to shipping address with clear console logging
+    console.log("Navigating to shipping address from cart drawer");
     navigate("/shipping-address");
   };
 
@@ -167,7 +168,7 @@ export default function CartDrawer() {
 
               <SheetFooter>
                 <Button className="w-full" onClick={handleCheckout}>
-                  Checkout
+                  Proceed to Checkout
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
               </SheetFooter>
